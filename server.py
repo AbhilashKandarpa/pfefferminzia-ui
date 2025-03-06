@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import json
 import requests
@@ -10,12 +11,21 @@ app = FastAPI()
 API_KEY = os.getenv("ALAN_API_KEY")
 headers = {"Authorization": f"Bearer {API_KEY}"}
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Replace with your React app URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 def generate_response():
     """ Antwort von Alan API wirklich als Stream ausgeben """
     url = "https://app.alan.de/api/v1/llm/generate_stream"
     payload = json.dumps({
         "messages": [
-            {"content": "Was sind die neuen Features der Baloise-Berufsunfähigkeitsversicherung?", "role": "user"}
+            {"content": input, "role": "user"}
         ],
         "temperature": 0.7,
         "top_p": 0.95,
@@ -30,6 +40,8 @@ def generate_response():
             yield chunk.decode()  
             time.sleep(0.1) 
 
-@app.get("/stream")
-async def stream_response():
-    return StreamingResponse(generate_response(), media_type="text/plain")
+@app.post("/stream")
+async def stream_response(request: Request):
+    data = await request.json()
+    user_input = data.get("input", "")
+    return StreamingResponse(generate_response(user_input), media_type="text/plain")
