@@ -53,7 +53,8 @@ def generate_response(user_input: str):
         "temperature": 0.7,
         "top_p": 0.95,
         "max_tokens": 800,
-        "model": "comma-soft/comma-llm-l-v3"
+        "model": "comma-soft/comma-llm-l-v3",
+        "knowledge_base_ids": ['67557796-c941-4b76-987c-d8cbbaa00dfd', 'ae22a2e9-edef-41d3-9cda-1a373edcc7e4']
     })
 
     response = requests.post(url, headers=headers, data=payload, stream=True)
@@ -83,7 +84,9 @@ async def stream_response(chat_input: ChatInput):
         
         # Get complete response
         response_text = generate_response(chat_input.input)
-        
+        response_text = response_text.replace("\n", "<br>")
+        response_text = response_text.replace("\"", "")
+
         # Return as plain text
         return response_text
     except Exception as e:

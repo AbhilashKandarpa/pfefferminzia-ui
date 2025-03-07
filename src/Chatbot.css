@@ -4,6 +4,7 @@
     height: 100vh;
     background-color: #191919;
     color: white;
+    overflow: auto;
 }
 
 /* Seitenleiste */
@@ -15,6 +16,8 @@
     flex-direction: column;
     gap: 10px;
     border-right: 1px solid #3a3a3a;
+    overflow: auto;
+    flex-shrink: 0;
 }
 
 /* Button für neuen Chat */
@@ -72,6 +75,7 @@
     flex-direction: column;
     align-items: center;
     padding: 20px;
+    overflow: hidden;
 }
 
 /* Header */
@@ -85,6 +89,7 @@
     text-align: center;
     font-size: 20px;
     font-weight: bold;
+    
 }
 
 /* Chatfenster */
@@ -99,6 +104,7 @@
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+    overflow: auto;
 }
 
 /* Bereich für die Nachrichten */
@@ -109,14 +115,40 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    max-width: 100%
 }
+
+/* Ladeanimation */
+.animate-spin {
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .chatbot-input:disabled {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+  }
+  
+  .send-button:disabled {
+    opacity: 0;
+    cursor: not-allowed;
+  }
 
 /* Nachrichten-Styling */
 .chat-message {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    max-width: 75%;
+    align-items: flex-start;
+    gap: 10px;
+    max-width: 100%;
+
 }
 
 .bot-message {
@@ -133,7 +165,9 @@
     font-size: 16px;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    white-space: pre-wrap;
+    white-space: normal;
+    display: inline;
+    max-width: 75%
 }
 
 .bot-message .message-text {
@@ -182,9 +216,15 @@
 }
 .user-icon {
     color: lightblue;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
 }
 .bot-icon {
     color: #ccff19;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
 }
 .pfefferminzia-logo {
     height: 20px; 

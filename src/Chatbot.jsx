@@ -1,27 +1,32 @@
 import React, { useState } from "react";
-import { MessageCircle, User, Bot, Send, PlusCircle } from "lucide-react";
+import { MessageCircle, User, Bot, Send, PlusCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import "./Chatbot.css";
 
 const Chatbot = () => {
   const [chats, setChats] = useState([
-    { id: 1, name: "Neuer Chat", messages: [{ id: 1, text: "Hallo! Wie kann ich Ihnen weiterhelfen?", sender: "bot" }] }
+    { id: 1, name: "Chat 1", messages: [{ id: 1, text: "Hallo! Wie kann ich Ihnen weiterhelfen?", sender: "bot" }] }
   ]);
   const [currentChatId, setCurrentChatId] = useState(1);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return;
-    
+    if (!input.trim()) return
+
+    const userMessage = { id: Date.now(), text: input, sender: "user" };
+    setIsLoading(true);
+    //let botMessage = { id: Date.now() + 1, text: "⏳schreibt...", sender: "bot" }
+
     // Add user message immediately
+  
     setChats((prevChats) => {
       return prevChats.map((chat) => {
         if (chat.id === currentChatId) {
           return {
             ...chat,
-            messages: [...chat.messages, 
-              { id: chat.messages.length + 1, text: input, sender: "user" }
-            ]
+            ...chat,
+            messages: [...chat.messages, userMessage]
           };
         }
         return chat;
@@ -66,6 +71,7 @@ const Chatbot = () => {
       console.error('Error:', error);
     }
 
+    setIsLoading(false);
     setInput("");
 };
 
@@ -115,6 +121,14 @@ const Chatbot = () => {
                 {msg.sender === "user" ? <User size={20} className="user-icon" /> : null}
               </div>
             ))}
+            {isLoading && (
+              <div className="chat-message bot-message">
+                <Bot size={20} className="bot-icon" />
+                <div className="message-text">
+                  <Loader2 className="animate-spin" size={20} />
+                </div>
+              </div>
+            )}
           </div>
           <div className="chatbot-input-container">
             <input
@@ -124,9 +138,18 @@ const Chatbot = () => {
               className="chatbot-input"
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+              disabled={isLoading}
             />
-            <button className="send-button" onClick={handleSendMessage}>
-              <Send size={20} className="send-icon" />
+            <button 
+              className="send-button" 
+              onClick={handleSendMessage}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <Send size={20} className="send-icon" />
+              )}
             </button>
           </div>
         </motion.div>
