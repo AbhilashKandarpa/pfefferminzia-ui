@@ -26,7 +26,7 @@ headers = {"Authorization": f"Bearer {API_KEY}"}
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -84,7 +84,7 @@ async def stream_response(chat_input: ChatInput):
         
         # Get complete response
         response_text = generate_response(chat_input.input)
-        response_text = response_text.replace("\n", "<br>")
+        response_text = response_text.replace("\n", " ")
         response_text = response_text.replace("\"", "")
 
         # Return as plain text

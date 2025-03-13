@@ -12,19 +12,15 @@ const Chatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return
+    if (!input.trim()) return;
 
     const userMessage = { id: Date.now(), text: input, sender: "user" };
     setIsLoading(true);
-    //let botMessage = { id: Date.now() + 1, text: "⏳schreibt...", sender: "bot" }
 
-    // Add user message immediately
-  
     setChats((prevChats) => {
       return prevChats.map((chat) => {
         if (chat.id === currentChatId) {
           return {
-            ...chat,
             ...chat,
             messages: [...chat.messages, userMessage]
           };
@@ -34,46 +30,54 @@ const Chatbot = () => {
     });
 
     try {
-      const response = await fetch('http://localhost:8000/stream', {
+      // Use environment variable for API URL if available
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfefferminziatestapp.agreeablebay-86e3278e.germanywestcentral.azurecontainerapps.io';
+      const response = await fetch(`${apiUrl}/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ input: input })
       });
 
-      const reader = response.body.getReader();
-      let botResponse = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const text = new TextDecoder().decode(value);
-        botResponse += text;
-
-        // Update bot message with streaming response
-        setChats((prevChats) => {
-          return prevChats.map((chat) => {
-            if (chat.id === currentChatId) {
-              return {
-                ...chat,
-                messages: [...chat.messages.filter(msg => msg.sender !== 'bot-stream'),
-                  { id: chat.messages.length + 2, text: botResponse, sender: "bot" }
-                ]
-              };
-            }
-            return chat;
-          });
+      const data = await response.text();
+      
+      setChats((prevChats) => {
+        return prevChats.map((chat) => {
+          if (chat.id === currentChatId) {
+            return {
+              ...chat,
+              messages: [...chat.messages,
+                { id: Date.now(), text: data, sender: "bot" }
+              ]
+            };
+          }
+          return chat;
         });
-      }
+      });
     } catch (error) {
       console.error('Error:', error);
+      // Optionally add error message to chat
+      setChats((prevChats) => {
+        return prevChats.map((chat) => {
+          if (chat.id === currentChatId) {
+            return {
+              ...chat,
+              messages: [...chat.messages,
+                { id: Date.now(), text: "Es tut mir leid, es ist ein Fehler aufgetreten.", sender: "bot" }
+              ]
+            };
+          }
+          return chat;
+        });
+      });
+    } finally {
+      setIsLoading(false);
+      setInput("");
     }
-
-    setIsLoading(false);
-    setInput("");
-};
+  };
 
   const handleNewChat = () => {
     const newChat = {
@@ -155,14 +159,13 @@ const Chatbot = () => {
         </motion.div>
       </div>
       <div className="footer-info">
-      <p >Tool by</p>
+        <p>Tool by</p>
         <img src="/fairdigital-logo.png" alt="fd-logo" className="footer-logo" />
         <p>&</p>
         <img src="/Alan_logo_weiß.svg" alt="alan" className="footer-logo" />
       </div>
-      </div>
+    </div>
   );
 };
 
 export default Chatbot;
-

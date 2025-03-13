@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  app:
+    image: pfefferminzia-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pfefferminzia-app
+    ports:
+      - "3000:3000"
+      - "8000:8000"
+    environment:
+      - ALAN_API_KEY=${ALAN_API_KEY}
+      - REACT_APP_API_URL=http://localhost:8000
+      - NODE_ENV=development
+    volumes:
+      - ./src:/app/frontend/src
+      - ./public:/app/frontend/public
+      - ./server.py:/app/server.py
+    restart: on-failure
