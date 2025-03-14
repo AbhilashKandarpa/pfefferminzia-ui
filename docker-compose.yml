@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    image: pfefferminzia-app:latest
+    image: pfefferminziaacr3.azurecr.io/pfefferminzia-app:latest
     build:
       context: .
       dockerfile: Dockerfile

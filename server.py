@@ -6,6 +6,7 @@ import json
 import requests
 import os
 from dotenv import load_dotenv
+import Alan
 import time
 
 # Load environment variables
@@ -23,14 +24,22 @@ if not API_KEY:
 
 headers = {"Authorization": f"Bearer {API_KEY}"}
 
-# Add CORS middleware
+# Allow requests from frontend (React)
+origins = [
+    "*"  # Add your frontend URL here
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=origins,  # Allow only frontend origin
+    allow_credentials=True,  # Allow credentials (e.g., cookies, authentication)
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
 )
+
+@app.get("/stream")
+async def stream():
+    return {"message": "CORS is working!"}
 
 # Request model
 class ChatInput(BaseModel):
@@ -43,36 +52,6 @@ class ChatInput(BaseModel):
             }
         }
 
-def generate_response(user_input: str):
-    """Generate complete response from Alan API"""
-    url = "https://app.alan.de/api/v1/llm/generate_stream"
-    payload = json.dumps({
-        "messages": [
-            {"content": user_input, "role": "user"}
-        ],
-        "temperature": 0.7,
-        "top_p": 0.95,
-        "max_tokens": 800,
-        "model": "comma-soft/comma-llm-l-v3",
-        "knowledge_base_ids": ['67557796-c941-4b76-987c-d8cbbaa00dfd', 'ae22a2e9-edef-41d3-9cda-1a373edcc7e4']
-    })
-
-    response = requests.post(url, headers=headers, data=payload, stream=True)
-    
-    if response.status_code != 200:
-        raise HTTPException(
-            status_code=response.status_code,
-            detail=f"API request failed with status code {response.status_code}"
-        )
-
-    # Collect all chunks into a single response
-    full_response = ""
-    for chunk in response.iter_content(chunk_size=64):
-        if chunk:
-            full_response += chunk.decode()
-    
-    return full_response
-
 @app.post("/stream",
     summary="Chat response",
     description="Send a message and receive a complete response from the AI"
@@ -83,12 +62,22 @@ async def stream_response(chat_input: ChatInput):
             raise HTTPException(status_code=400, detail="Input field cannot be empty")
         
         # Get complete response
-        response_text = generate_response(chat_input.input)
-        response_text = response_text.replace("\n", " ")
-        response_text = response_text.replace("\"", "")
+        response = Alan.generate_response(chat_input.input)
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"API request failed with status code {response.status_code}"
+            )
+
+        # Collect all chunks into a single response
+        full_response = ""
+        for chunk in response.iter_content(chunk_size=64):
+            if chunk:
+                full_response += chunk.decode()
 
         # Return as plain text
-        return response_text
+        print(full_response)
+        return full_response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
