@@ -91,12 +91,12 @@ def generate_response(user_input):
 
     return response
 
-def create_chat():
+def create_chat(user_input):
     url = "https://app.alan.de/api/v1/chats/"
 
     #Configure the chat
     payload = json.dumps({
-      "content": "Wie trägt die Digitalisierung zur Nachhaltigkeit in der Versicherungsbranche bei, und welche Rolle spielt dabei Cloud Computing?",
+      "content": user_input,
       "settings": {
           "initial_conversation": [
                           {
@@ -143,7 +143,7 @@ def continue_chat(chat_id):
     return response
 
 # Getting file ids of the first 100 articles from Pfefferminzia
-for file_name in files:
+"""for file_name in files:
   response = upload_file(file_name)
 
   file_id = response.json().get("resource_id")
@@ -160,7 +160,7 @@ try:
 except Exception as e:
   print("Error: ", response.status_code, response.text)  
 
-print(knowledge_base_ids)
+print(knowledge_base_ids)"""
 
 # Getting the file id
 """file_ids = []

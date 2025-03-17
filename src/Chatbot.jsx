@@ -86,6 +86,7 @@ const Chatbot = () => {
 };
 
   const handleNewChat = () => {
+    //Once the user clicks on new chat the Alan endpoint create_chat should be called. Otherwise continue_chat should be called.
     const newChat = {
       id: chats.length + 1,
       name: `Chat ${chats.length + 1}`,

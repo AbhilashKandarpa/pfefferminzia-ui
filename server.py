@@ -4,7 +4,7 @@ from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
 import Alan
-from create_links import fetch_article_url
+#from create_links import fetch_article_url
 
 # Load environment variables
 load_dotenv()
@@ -54,29 +54,27 @@ class ChatInput(BaseModel):
     description="Send a message and receive a complete response from the AI"
 )
 async def stream_response(chat_input: ChatInput):
-    try:
-        if not chat_input.input.strip():
-            raise HTTPException(status_code=400, detail="Input field cannot be empty")
-        
-        # Get complete response
-        response = Alan.generate_response(chat_input.input)
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"API request failed with status code {response.status_code}"
-            )
+    if not chat_input.input.strip():
+        raise HTTPException(status_code=400, detail="Input field cannot be empty")
+    
+    # Get complete response
+    response = Alan.create_chat(chat_input.input)
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"API request failed with status code {response.status_code}"
+        )
 
-        # Collect all chunks into a single response
-        full_response = ""
-        for chunk in response.iter_content(chunk_size=64):
-            if chunk:
-                full_response += chunk.decode()
+    # Collect all chunks into a single response
+    full_response = ""
+    for chunk in response.iter_content(chunk_size=64):
+        if chunk:
+            full_response += chunk.decode("utf-8", errors="ignore")
 
-        # Return as plain text
-        print(full_response)
-        return full_response
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Return as plain text
+    print(f"{full_response}")
+    return full_response
+    
 
 @app.get("/health",
     summary="Health check",
@@ -88,3 +86,4 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+    
