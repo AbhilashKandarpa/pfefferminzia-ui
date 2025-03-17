@@ -1,13 +1,10 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-import json
-import requests
 import os
 from dotenv import load_dotenv
 import Alan
-import time
+from create_links import fetch_article_url
 
 # Load environment variables
 load_dotenv()
