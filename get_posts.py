@@ -2,6 +2,7 @@ import json
 import requests
 import tiktoken
 import os
+from categorize_articles import categorize_articles
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,7 +17,7 @@ encoding = tiktoken.encoding_for_model("gpt-4")
 url = "https://pfefferminzia.de/wp-json/wp/v2/posts"
 params = {
     "per_page": 100,  # Number of posts
-    "page": 2        # Pagination
+    "page": 3        # Pagination
 }
 
 # Make the API request
@@ -39,10 +40,10 @@ if response.status_code == 200:
     # Save the posts to a JSON file
     with open("wordpress_posts.json", "w", encoding="utf-8") as file:
         json.dump(formatted_posts, file, ensure_ascii=False, indent=4)
+    
+    categorize_articles("wordpress_posts.json", "articles.json")
 
-        print("Posts saved to 'wordpress_posts.json'")
-
-    with open("wordpress_posts.json", "r", encoding="utf-8") as file:
+    with open("articles.json", "r", encoding="utf-8") as file:
         json_string = file.read()
 
         print("Total number of tokens when encoded with gpt-4 are: ", len(encoding.encode(json_string)))

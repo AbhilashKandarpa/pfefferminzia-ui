@@ -30,15 +30,15 @@ const Chatbot = () => {
       });
     });
 
-    // Send the actual user input instead of "Hello"
-    const response = await fetch("https://pfefferminziatestapp.agreeablebay-86e3278e.germanywestcentral.azurecontainerapps.io/stream", {
+    
+    const response = await fetch("http://localhost:8000/stream", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json"
       },
       mode: 'cors',
-      body: JSON.stringify({ input: input }) // Use the actual input
+      body: JSON.stringify({ input: input }) 
     });
 
     if (!response.ok) {

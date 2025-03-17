@@ -13,7 +13,7 @@ if not os.path.exists(articles_dir):
     os.makedirs(articles_dir)
 
 # Read JSON data from file
-with open("wordpress_posts.json", "r", encoding="utf-8") as file:
+with open("articles.json", "r", encoding="utf-8") as file:
     json_objects = json.load(file)  # Assuming it's a list of JSON objects
 
 # Generate filenames for each JSON object
