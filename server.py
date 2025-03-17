@@ -4,7 +4,9 @@ from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
 import Alan
-#from create_links import fetch_article_url
+from create_links import fetch_article_url
+from extract_filenames import extract_document_names
+
 
 # Load environment variables
 load_dotenv()
@@ -34,6 +36,32 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
+def truncate_answer(text):
+    # Define the truncation point
+    cutoff_phrase = "\n\nFolgende Dokumente der Wissensdatenbank"
+    
+    # Find the cutoff index
+    cutoff_index = text.find(cutoff_phrase)
+
+    # If the phrase is found, truncate the text before it
+    if cutoff_index != -1:
+        return text[:cutoff_index]
+    
+    # If the phrase is not found, return the original text
+    return text
+
+def process(full_response):
+    documents = extract_document_names(full_response)
+    urls =[]
+    for document in documents:
+        url = fetch_article_url(document)
+        urls.append(f"{url}\n")
+    full_response = truncate_answer(full_response)
+    full_response += f"\n\n{urls}"
+    print(f"{full_response}")
+    return full_response
+
+
 @app.get("/stream")
 async def stream():
     return {"message": "CORS is working!"}
@@ -49,11 +77,39 @@ class ChatInput(BaseModel):
             }
         }
 
+
 @app.post("/stream",
     summary="Chat response",
     description="Send a message and receive a complete response from the AI"
 )
 async def stream_response(chat_input: ChatInput):
+    if not chat_input.input.strip():
+        raise HTTPException(status_code=400, detail="Input field cannot be empty")
+    
+    # Get complete response
+    response = Alan.generate_response(chat_input.input)
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"API request failed with status code {response.status_code}"
+        )
+
+    # Collect all chunks into a single response
+    full_response = ""
+    for chunk in response.iter_content(chunk_size=64):
+        if chunk:
+            full_response += chunk.decode("utf-8", errors="ignore")
+
+    # Return as plain text
+    full_response = process(full_response)
+    return full_response
+
+
+@app.post("/start_chat",
+    summary="Chat response",
+    description="Send a message and receive a complete response from the AI"
+)
+async def create_chat(chat_input: ChatInput):
     if not chat_input.input.strip():
         raise HTTPException(status_code=400, detail="Input field cannot be empty")
     
@@ -73,8 +129,35 @@ async def stream_response(chat_input: ChatInput):
 
     # Return as plain text
     print(f"{full_response}")
-    return full_response
+    return full_response    
+
+
+@app.post("/continue_chat",
+    summary="Chat response",
+    description="Send a message and receive a complete response from the AI"
+)
+async def continue_chat(chat_input: ChatInput):
+    if not chat_input.input.strip():
+        raise HTTPException(status_code=400, detail="Input field cannot be empty")
     
+    # Get complete response
+    response = Alan.continue_chat(chat_input.input, Alan.chat_id, Alan.previous_message_id)
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"API request failed with status code {response.status_code}"
+        )
+
+    # Collect all chunks into a single response
+    full_response = ""
+    for chunk in response.iter_content(chunk_size=64):
+        if chunk:
+            full_response += chunk.decode("utf-8", errors="ignore")
+
+    # Return as plain text
+    print(f"{full_response}")
+    return full_response 
+
 
 @app.get("/health",
     summary="Health check",

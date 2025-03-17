@@ -10,8 +10,3 @@ def fetch_article_url(article_name):
         return f"No results found for {article_name}."
     except Exception as e:
         return f"An error occurred: {str(e)}"
-
-# Example usage
-article_name = "Was das Bündnis Sahra Wagenknecht für die Rente plant"
-article_link = fetch_article_url(article_name)
-print(article_link)

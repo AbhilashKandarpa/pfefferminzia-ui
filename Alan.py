@@ -130,12 +130,12 @@ def create_chat(user_input):
     response = requests.post(url, headers=headers, data=payload)
     return response
 
-def continue_chat(chat_id):
-    url = "https://app.alan.de/api/v1/chats/cf33da44-d05a-4bdb-bc87-4b1ae4426648/generate/"
+def continue_chat(user_input, chat_id, previous_message_id):
+    url = f"https://app.alan.de/api/v1/chats/{chat_id}/generate/"
 
     payload = json.dumps({
-      "previous_message_id": "00ef3812-d9e4-48e5-bed7-d591b63612cb",
-      "content": "Was ist die unterschied zwischen SPV und GKV? Welche versicherung ist billiger?"
+      "previous_message_id": previous_message_id,
+      "content": user_input
     })
 
     response = requests.post(url, headers=headers, data=payload)
