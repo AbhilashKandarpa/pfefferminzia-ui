@@ -37,6 +37,19 @@ app.add_middleware(
 )
 
 def truncate_answer(text):
+    """
+    Truncates the response text at a specific phrase.
+
+    Args:
+        text (str): The full response text from the AI
+
+    Returns:
+        str: The truncated text without the document references section
+
+    Example:
+        >>> truncate_answer("Some answer...\n\nFolgende Dokumente der Wissensdatenbank...")
+        "Some answer..."
+    """
     # Define the truncation point
     cutoff_phrase = "\n\nFolgende Dokumente der Wissensdatenbank"
     
@@ -51,6 +64,20 @@ def truncate_answer(text):
     return text
 
 def process(full_response):
+    """
+    Processes the full response from Alan AI by extracting document references,
+    fetching their URLs, and formatting the final response.
+
+    Args:
+        full_response (str): The complete response from Alan AI
+
+    Returns:
+        str: Processed response with truncated text and appended document URLs
+
+    Example:
+        >>> process("Answer with document references...")
+        "Answer...\n\n[URL1]\n[URL2]"
+    """
     documents = extract_document_names(full_response)
     urls =[]
     for document in documents:
@@ -64,6 +91,16 @@ def process(full_response):
 
 @app.get("/stream")
 async def stream():
+    """
+    Simple endpoint to test if CORS is properly configured.
+
+    Returns:
+        dict: A message indicating CORS is working
+
+    Example:
+        >>> await stream()
+        {"message": "CORS is working!"}
+    """
     return {"message": "CORS is working!"}
 
 # Request model
@@ -83,6 +120,22 @@ class ChatInput(BaseModel):
     description="Send a message and receive a complete response from the AI"
 )
 async def stream_response(chat_input: ChatInput):
+    """
+    Handles chat messages and returns AI responses.
+
+    Args:
+        chat_input (ChatInput): The user's input message
+
+    Returns:
+        str: Processed response from the AI
+
+    Raises:
+        HTTPException: If input is empty or API request fails
+
+    Example:
+        >>> await stream_response(ChatInput(input="Tell me about insurance"))
+        "Here's information about insurance..."
+    """
     if not chat_input.input.strip():
         raise HTTPException(status_code=400, detail="Input field cannot be empty")
     
@@ -110,6 +163,22 @@ async def stream_response(chat_input: ChatInput):
     description="Send a message and receive a complete response from the AI"
 )
 async def create_chat(chat_input: ChatInput):
+    """
+    Initiates a new chat session with Alan AI.
+
+    Args:
+        chat_input (ChatInput): The initial message to start the chat
+
+    Returns:
+        str: The AI's response to the initial message
+
+    Raises:
+        HTTPException: If input is empty or API request fails
+
+    Example:
+        >>> await create_chat(ChatInput(input="Hello"))
+        "Hi! How can I help you today?"
+    """
     if not chat_input.input.strip():
         raise HTTPException(status_code=400, detail="Input field cannot be empty")
     
@@ -137,6 +206,22 @@ async def create_chat(chat_input: ChatInput):
     description="Send a message and receive a complete response from the AI"
 )
 async def continue_chat(chat_input: ChatInput):
+    """
+    Continues an existing chat session with Alan AI.
+
+    Args:
+        chat_input (ChatInput): The next message in the conversation
+
+    Returns:
+        str: The AI's response to the message
+
+    Raises:
+        HTTPException: If input is empty or API request fails
+
+    Example:
+        >>> await continue_chat(ChatInput(input="Tell me more"))
+        "Here's additional information..."
+    """
     if not chat_input.input.strip():
         raise HTTPException(status_code=400, detail="Input field cannot be empty")
     
@@ -164,6 +249,16 @@ async def continue_chat(chat_input: ChatInput):
     description="Check if the API is running"
 )
 async def health_check():
+    """
+    Checks if the API service is running properly.
+
+    Returns:
+        dict: Status indicating the health of the service
+
+    Example:
+        >>> await health_check()
+        {"status": "healthy"}
+    """
     return {"status": "healthy"}
 
 if __name__ == "__main__":
