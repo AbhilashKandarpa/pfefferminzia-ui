@@ -11,7 +11,7 @@ def create_filename_from_title(json_data):
 articles_dir = "articles"
 if not os.path.exists(articles_dir):
     os.makedirs(articles_dir)
-
+    
 # Read JSON data from file
 with open("articles.json", "r", encoding="utf-8") as file:
     json_objects = json.load(file)  # Assuming it's a list of JSON objects

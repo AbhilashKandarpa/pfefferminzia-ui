@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import Alan
 from create_links import fetch_article_url
 from extract_filenames import extract_document_names
+from extract_chat_info import extract_required_info
 
 
 # Load environment variables
@@ -192,15 +193,19 @@ async def create_chat(chat_input: ChatInput):
             detail=f"API request failed with status code {response.status_code}"
         )
 
-    # Collect all chunks into a single response
-    full_response = ""
-    for chunk in response.iter_content(chunk_size=64):
-        if chunk:
-            full_response += chunk.decode("utf-8", errors="ignore")
+        
+    chat_id, message_id, message_content = extract_required_info(response.text)
+
+    # Print results
+    print("Chat ID:", chat_id)
+    os.environ["CHAT_ID"] = str(chat_id)
+    print("Message ID:", message_id)
+    os.environ["PREVIOUS_MESSAGE_ID"] = str(message_id)
+    print("Message Content:", message_content)
 
     # Return as plain text
-    print(f"{full_response}")
-    return full_response    
+    print(f"{message_content}")
+    return message_content    
 
 
 @app.post("/continue_chat",

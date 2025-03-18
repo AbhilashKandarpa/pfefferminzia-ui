@@ -2,15 +2,18 @@ import json
 import os
 import create
 import requests
+from extract_chat_info import extract_required_info
 from dotenv import load_dotenv
 
 load_dotenv()
 
 API_KEY = os.getenv("ALAN_API_KEY")
 headers = {"Authorization": f"Bearer {API_KEY}"}
-connector_id="0b484b74-06e6-4e11-9389-a2088f12e99c"
-knowledge_base_ids=[]
-chat_id="cf33da44-d05a-4bdb-bc87-4b1ae4426648"
+connector_id = "0b484b74-06e6-4e11-9389-a2088f12e99c"
+knowledge_base_ids = os.getenv("KNOWLEDGE_BASE_IDS")
+chat_id = os.getenv("CHAT_ID")
+previous_message_id = os.getenv("PREVIOUS_MESSAGE_ID")
+
 
 #get filenames from create.py
 files = create.filenames
@@ -131,16 +134,17 @@ def create_chat(user_input):
     return response
 
 def continue_chat(user_input, chat_id, previous_message_id):
-    url = f"https://app.alan.de/api/v1/chats/{chat_id}/generate/"
+    if(chat_id is not  None and previous_message_id is not None):
+        url = f"https://app.alan.de/api/v1/chats/{chat_id}/generate/"
 
-    payload = json.dumps({
-      "previous_message_id": previous_message_id,
-      "content": user_input
-    })
+        payload = json.dumps({
+          "previous_message_id": previous_message_id,
+          "content": user_input
+        })
 
-    response = requests.post(url, headers=headers, data=payload)
+        response = requests.post(url, headers=headers, data=payload)
 
-    return response
+        return response
 
 # Getting file ids of the first 100 articles from Pfefferminzia
 """for file_name in files:
@@ -187,10 +191,10 @@ response = requests.get("https://app.alan.de/api/v1/connectors/knowledge-bases",
 response = response.json()
 
 if isinstance(response, dict) and "knowledge_bases" in response:
-    print(type(response))
     json_files = response["knowledge_bases"]
     resource_ids = [file["resource_id"] for file in json_files]
     print(f"Printing the size of the list here: {len(resource_ids)}.")
+    os.environ["KNOWLEDGE_BASE_IDS"] = ",".join(resource_ids)
     knowledge_base_ids = resource_ids
     print(knowledge_base_ids)
 else:
@@ -211,9 +215,21 @@ answer = generate_response(knowledge_base_ids)
 print(f"{answer.status_code}, and the answer: {answer.text}")"""
 
 # Creating a chat
-"""response = create_chat()
-print(response.status_code, response.text)"""
+"""chat_id=None
+previous_message_id=None
+response = create_chat("Was ist haftplichtversicherung?")
+print(response.status_code)
+
+chat_id, message_id, message_content = extract_required_info(response.text)
+
+# Print results
+print("Chat ID:", chat_id)
+os.environ["CHAT_ID"] = str(chat_id)
+print("Message ID:", message_id)
+os.environ["PREVIOUS_MESSAGE_ID"] = str(message_id)
+print("Message Content:", message_content)"""
 
 # Continue the chat
-"""response = continue_chat(chat_id)
+"""print(f"Chat ID: {chat_id}, Previous Message ID: {message_id}")
+response = continue_chat("Was sind die anderen versicherungen und was ist die unterschied?", chat_id, message_id)
 print(response.status_code, response.text)"""
