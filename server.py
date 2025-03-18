@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
+from time import sleep
 from dotenv import load_dotenv
 import Alan
 from create_links import fetch_article_url
@@ -82,6 +83,7 @@ def process(full_response):
     urls =[]
     for document in documents:
         url = fetch_article_url(document)
+        sleep(1)
         urls.append(f"{url}\n")
     full_response = truncate_answer(full_response)
     full_response += f"\n\n{urls}"
