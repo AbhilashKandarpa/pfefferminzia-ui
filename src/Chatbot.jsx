@@ -12,64 +12,62 @@ const Chatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return
+    if (!input.trim()) return;
 
-    const userMessage = { id: Date.now(), text: input, sender: "user" };
     setIsLoading(true);
-    //let botMessage = { id: Date.now() + 1, text: "⏳schreibt...", sender: "bot" }
 
-    // Add user message immediately
-  
-    setChats((prevChats) => {
-      return prevChats.map((chat) => {
-        if (chat.id === currentChatId) {
-          return {
-            ...chat,
-            ...chat,
-            messages: [...chat.messages, userMessage]
-          };
+    try {
+        const currentChat = chats.find(chat => chat.id === currentChatId);
+        if (!currentChat) {
+            throw new Error("Chat not found");
         }
-        return chat;
-      });
-    });
-  
-    const response = await fetch("http://localhost:8000/start_chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ input: input })
-    });
 
-    const reader = response.body.getReader();
-    let botResponse = '';
+        const endpoint = currentChat.messages.length > 1 ? "continue_chat" : "start_chat";
+        const url = `http://localhost:8000/${endpoint}`;
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      
-      const text = new TextDecoder().decode(value);
-      botResponse += text;
+        console.log("Sending request to:", url);
 
-      // Update bot message with streaming response
-      setChats((prevChats) => {
-        return prevChats.map((chat) => {
-          if (chat.id === currentChatId) {
-            return {
-              ...chat,
-              messages: [...chat.messages.filter(msg => msg.sender !== 'bot-stream'),
-                { id: chat.messages.length + 2, text: botResponse, sender: "bot" }
-              ]
-            };
-          }
-          return chat;
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ input: input }) // Correct format
         });
-      });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        let botResponse = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            botResponse += new TextDecoder().decode(value);
+
+            setChats((prevChats) => {
+                return prevChats.map((chat) => {
+                    if (chat.id === currentChatId) {
+                        return {
+                            ...chat,
+                            messages: [...chat.messages, { id: Date.now(), text: botResponse, sender: "bot" }]
+                        };
+                    }
+                    return chat;
+                });
+            });
+        }
+    } catch (error) {
+        console.error("Fetch error:", error);
+        alert("Failed to connect to the server. Ensure the backend is running.");
+    } finally {
+        setIsLoading(false);
+        setInput("");
     }
-  
-    setIsLoading(false);
-    setInput("");
-};
+  };
 
   const handleNewChat = () => {
     const newChat = {
@@ -151,14 +149,13 @@ const Chatbot = () => {
         </motion.div>
       </div>
       <div className="footer-info">
-      <p >Tool by</p>
+      <p>Tool by</p>
         <img src="/fairdigital-logo.png" alt="fd-logo" className="footer-logo" />
         <p>&</p>
         <img src="/Alan_logo_weiß.svg" alt="alan" className="footer-logo" />
       </div>
-      </div>
+    </div>
   );
 };
 
 export default Chatbot;
-
