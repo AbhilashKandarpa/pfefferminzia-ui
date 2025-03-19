@@ -5,7 +5,7 @@ import "./Chatbot.css";
 
 const Chatbot = () => {
   const [chats, setChats] = useState([
-    { id: 1, name: "Chat 1", messages: [{ id: 1, text: "Hallo! Wie kann ich Ihnen weiterhelfen?", sender: "bot" }] }
+    { id: 1, name: "Chat 1", messages: [{ id: 1, text: "Hallo, ich bin das Wissensmanagement von Pfefferminzia.", sender: "bot" }] }
   ]);
   const [currentChatId, setCurrentChatId] = useState(1);
   const [input, setInput] = useState("");
@@ -82,7 +82,7 @@ const Chatbot = () => {
     const newChat = {
       id: chats.length + 1,
       name: `Chat ${chats.length + 1}`,
-      messages: [{ id: 1, text: "Hallo! Wie kann ich Ihnen weiterhelfen?", sender: "bot" }]
+      messages: [{ id: 1, text: "Hallo, ich bin das Wissensmanagement von Pfefferminzia.", sender: "bot" }]
     };
     setChats([...chats, newChat]);
     setCurrentChatId(newChat.id);
@@ -160,8 +160,6 @@ const Chatbot = () => {
       <div className="footer-info">
       <p >Tool by</p>
         <img src="/fairdigital-logo.png" alt="fd-logo" className="footer-logo" />
-        <p>&</p>
-        <img src="/Alan_logo_weiß.svg" alt="alan" className="footer-logo" />
       </div>
       </div>
   );
