@@ -38,7 +38,7 @@ const Chatbot = () => {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ input: "Hello" })
+      body: JSON.stringify({ input: input })
     });
 
     const reader = response.body.getReader();
