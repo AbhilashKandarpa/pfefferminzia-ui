@@ -14,6 +14,8 @@ knowledge_base_ids = os.getenv("KNOWLEDGE_BASE_IDS")
 chat_id = os.getenv("CHAT_ID")
 previous_message_id = os.getenv("PREVIOUS_MESSAGE_ID")
 
+# File to store values
+STATE_FILE = "chat_state.json"
 
 #get filenames from create.py
 files = create.filenames
@@ -135,7 +137,7 @@ def create_chat(user_input):
 
 def continue_chat(user_input, chat_id, previous_message_id):
     if(chat_id is not  None and previous_message_id is not None):
-        url = f"https://app.alan.de/api/v1/chats/{chat_id}/generate/"
+        url = f"https://app.alan.de/api/v1alpha/chats/{chat_id}/generate"
 
         payload = json.dumps({
           "previous_message_id": previous_message_id,
@@ -145,6 +147,20 @@ def continue_chat(user_input, chat_id, previous_message_id):
         response = requests.post(url, headers=headers, data=payload)
 
         return response
+
+# Load previous state
+def load_state():
+    try:
+        with open(STATE_FILE, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"chat_id": None, "previous_message_id": None}
+
+# Save state
+def save_state(chat_id, previous_message_id):
+    with open(STATE_FILE, "w") as f:
+        json.dump({"chat_id": chat_id, "previous_message_id": previous_message_id}, f)
+
 
 # Getting file ids of the first 100 articles from Pfefferminzia
 """for file_name in files:
@@ -215,8 +231,6 @@ answer = generate_response(knowledge_base_ids)
 print(f"{answer.status_code}, and the answer: {answer.text}")"""
 
 # Creating a chat
-"""chat_id=None
-previous_message_id=None
 response = create_chat("Was ist haftplichtversicherung?")
 print(response.status_code)
 
@@ -227,9 +241,16 @@ print("Chat ID:", chat_id)
 os.environ["CHAT_ID"] = str(chat_id)
 print("Message ID:", message_id)
 os.environ["PREVIOUS_MESSAGE_ID"] = str(message_id)
-print("Message Content:", message_content)"""
+print("Message Content:", message_content)
 
 # Continue the chat
-"""print(f"Chat ID: {chat_id}, Previous Message ID: {message_id}")
-response = continue_chat("Was sind die anderen versicherungen und was ist die unterschied?", chat_id, message_id)
-print(response.status_code, response.text)"""
+response = continue_chat("Was sind die anderen versicherungen und was ist die unterschied?", chat_id, str(message_id))
+print(response.status_code)
+chat_id, message_id, message_content = extract_required_info(response.text)
+
+# Print results
+print("Chat ID:", chat_id)
+os.environ["CHAT_ID"] = str(chat_id)
+print("Message ID:", message_id)
+os.environ["PREVIOUS_MESSAGE_ID"] = str(message_id)
+print("Message Content:", message_content)

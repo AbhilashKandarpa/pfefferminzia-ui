@@ -192,15 +192,13 @@ async def create_chat(chat_input: ChatInput):
             status_code=response.status_code,
             detail=f"API request failed with status code {response.status_code}"
         )
-
         
     chat_id, message_id, message_content = extract_required_info(response.text)
 
     # Print results
     print("Chat ID:", chat_id)
-    os.environ["CHAT_ID"] = str(chat_id)
     print("Message ID:", message_id)
-    os.environ["PREVIOUS_MESSAGE_ID"] = str(message_id)
+    Alan.save_state(chat_id, str(message_id))
     print("Message Content:", message_content)
 
     # Return as plain text
@@ -232,23 +230,29 @@ async def continue_chat(chat_input: ChatInput):
     if not chat_input.input.strip():
         raise HTTPException(status_code=400, detail="Input field cannot be empty")
     
+    #Load chat and message Ids
+    state = Alan.load_state()
+    chat_id = state["chat_id"]
+    previous_message_id = state["previous_message_id"]
     # Get complete response
-    response = Alan.continue_chat(chat_input.input, Alan.chat_id, Alan.previous_message_id)
+    response = Alan.continue_chat(chat_input.input, chat_id, previous_message_id)
     if response.status_code != 200:
         raise HTTPException(
             status_code=response.status_code,
             detail=f"API request failed with status code {response.status_code}"
         )
+        
+    chat_id, message_id, message_content = extract_required_info(response.text)
 
-    # Collect all chunks into a single response
-    full_response = ""
-    for chunk in response.iter_content(chunk_size=64):
-        if chunk:
-            full_response += chunk.decode("utf-8", errors="ignore")
+    # Print results
+    print("Chat ID:", chat_id)
+    print("Message ID:", message_id)
+    Alan.save_state(chat_id, str(message_id))
+    print("Message Content:", message_content)
 
     # Return as plain text
-    print(f"{full_response}")
-    return full_response 
+    print(f"{message_content}")
+    return message_content
 
 
 @app.get("/health",
