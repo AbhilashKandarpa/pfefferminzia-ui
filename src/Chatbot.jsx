@@ -12,16 +12,19 @@ const Chatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim()) return
 
     const userMessage = { id: Date.now(), text: input, sender: "user" };
     setIsLoading(true);
+    //let botMessage = { id: Date.now() + 1, text: "⏳schreibt...", sender: "bot" }
 
     // Add user message immediately
+  
     setChats((prevChats) => {
       return prevChats.map((chat) => {
         if (chat.id === currentChatId) {
           return {
+            ...chat,
             ...chat,
             messages: [...chat.messages, userMessage]
           };
@@ -29,65 +32,46 @@ const Chatbot = () => {
         return chat;
       });
     });
-
-    
-    const response = await fetch("http://localhost:8000/stream", {
+  
+    const response = await fetch("http://localhost:8000/start_chat", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
+        "Content-Type": "application/json"
       },
-      mode: 'cors',
-      body: JSON.stringify({ input: input }) 
+      body: JSON.stringify({ input: "Hello" })
     });
 
-    if (!response.ok) {
-      console.error('Server error:', response.status, response.statusText);
-      return;
-    }
-
-    // Read and process the response
     const reader = response.body.getReader();
     let botResponse = '';
 
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const text = new TextDecoder().decode(value);
-        botResponse += text;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const text = new TextDecoder().decode(value);
+      botResponse += text;
 
-        // Update chat with current response
-        setChats((prevChats) => {
-          return prevChats.map((chat) => {
-            if (chat.id === currentChatId) {
-              return {
-                ...chat,
-                messages: [...chat.messages.filter(msg => msg.sender !== 'bot-stream'),
-                  { 
-                    id: Date.now(), 
-                    text: botResponse, 
-                    sender: "bot" 
-                  }
-                ]
-              };
-            }
-            return chat;
-          });
+      // Update bot message with streaming response
+      setChats((prevChats) => {
+        return prevChats.map((chat) => {
+          if (chat.id === currentChatId) {
+            return {
+              ...chat,
+              messages: [...chat.messages.filter(msg => msg.sender !== 'bot-stream'),
+                { id: chat.messages.length + 2, text: botResponse, sender: "bot" }
+              ]
+            };
+          }
+          return chat;
         });
-      }
-    } catch (error) {
-      console.error('Error reading response:', error);
-    } finally {
-      setIsLoading(false);
-      setInput("");
+      });
     }
+  
+    setIsLoading(false);
+    setInput("");
 };
 
   const handleNewChat = () => {
-    //Once the user clicks on new chat the Alan endpoint create_chat should be called. 
-    //Otherwise continue_chat should be called.
     const newChat = {
       id: chats.length + 1,
       name: `Chat ${chats.length + 1}`,
