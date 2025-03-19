@@ -231,7 +231,7 @@ answer = generate_response(knowledge_base_ids)
 print(f"{answer.status_code}, and the answer: {answer.text}")"""
 
 # Creating a chat
-response = create_chat("Was ist haftplichtversicherung?")
+"""response = create_chat("Was ist haftplichtversicherung?")
 print(response.status_code)
 
 chat_id, message_id, message_content = extract_required_info(response.text)
@@ -241,10 +241,10 @@ print("Chat ID:", chat_id)
 os.environ["CHAT_ID"] = str(chat_id)
 print("Message ID:", message_id)
 os.environ["PREVIOUS_MESSAGE_ID"] = str(message_id)
-print("Message Content:", message_content)
+print("Message Content:", message_content)"""
 
 # Continue the chat
-response = continue_chat("Was sind die anderen versicherungen und was ist die unterschied?", chat_id, str(message_id))
+"""response = continue_chat("Was sind die anderen versicherungen und was ist die unterschied?", chat_id, str(message_id))
 print(response.status_code)
 chat_id, message_id, message_content = extract_required_info(response.text)
 
@@ -253,4 +253,4 @@ print("Chat ID:", chat_id)
 os.environ["CHAT_ID"] = str(chat_id)
 print("Message ID:", message_id)
 os.environ["PREVIOUS_MESSAGE_ID"] = str(message_id)
-print("Message Content:", message_content)
+print("Message Content:", message_content)"""
