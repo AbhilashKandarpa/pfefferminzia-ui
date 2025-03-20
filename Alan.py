@@ -162,25 +162,26 @@ def save_state(chat_id, previous_message_id):
         json.dump({"chat_id": chat_id, "previous_message_id": previous_message_id}, f)
 
 
-# Getting file ids of the first 100 articles from Pfefferminzia
-"""for file_name in files:
-  response = upload_file(file_name)
+# Getting file ids of the articles from articles.json and create a knowledge base
+def create_knowledgebase_from_files(connector_id, knowledge_base_ids):
+    for file_name in files:
+      response = upload_file(file_name)
 
-  file_id = response.json().get("resource_id")
-  _files.append(file_id)
-  #print(response.status_code, file_id)
+      file_id = response.json().get("resource_id")
+      _files.append(file_id)
 
 # Creating a knowledge base with the first 100 articles from Pfefferminzia
-try:
-  response = create_knowledge_base(connector_id, file_name, _files)
-  #print(response.status_code, response.text)
-  knowledge_base_id = response.json().get("resource_id")
-  knowledge_base_ids.append(knowledge_base_id)
-  print(response.status_code, knowledge_base_id)
-except Exception as e:
-  print("Error: ", response.status_code, response.text)  
+    try:
+      response = create_knowledge_base(connector_id, file_name, _files)
+      knowledge_base_id = response.json().get("resource_id")
+      knowledge_base_ids.append(knowledge_base_id)
+      print(response.status_code, knowledge_base_id)
+    except Exception as e:
+      print("Error: ", response.status_code, response.text)  
 
-print(knowledge_base_ids)"""
+    print(knowledge_base_ids)
+
+create_knowledgebase_from_files(connector_id, knowledge_base_ids, files, _files)
 
 # Getting the file id
 """file_ids = []

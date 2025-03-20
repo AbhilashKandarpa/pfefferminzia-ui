@@ -1,17 +1,7 @@
 import json
 import requests
-import tiktoken
-import os
 from categorize_articles import categorize_articles
-from dotenv import load_dotenv
 
-load_dotenv()
-
-# load the OpenAI API KEY
-os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY")
-
-# Select the encoding
-encoding = tiktoken.encoding_for_model("gpt-4")
 
 # Set up the API endpoint and parameters
 url = "https://pfefferminzia.de/wp-json/wp/v2/posts"
@@ -42,11 +32,6 @@ if response.status_code == 200:
         json.dump(formatted_posts, file, ensure_ascii=False, indent=4)
     
     categorize_articles("wordpress_posts.json", "articles.json")
-
-    with open("articles.json", "r", encoding="utf-8") as file:
-        json_string = file.read()
-
-        print("Total number of tokens when encoded with gpt-4 are: ", len(encoding.encode(json_string)))
 
 else:
     print(f"Error: {response.status_code} - {response.text}")

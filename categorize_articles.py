@@ -1,6 +1,6 @@
 import json
 
-def categorize_articles(input_file="wordpress_posts.json", output_file="articles.json"):
+def categorize_articles(input_file, output_file):
     """
     Reads a JSON file, categorizes articles based on predefined categories, 
     and writes the updated data to a new JSON file.
