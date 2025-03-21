@@ -12,70 +12,92 @@ const Chatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return
+    if (!input.trim()) return;
 
     const userMessage = { id: Date.now(), text: input, sender: "user" };
     setIsLoading(true);
-    //let botMessage = { id: Date.now() + 1, text: "⏳schreibt...", sender: "bot" }
 
-    // Add user message immediately
-  
-    setChats((prevChats) => {
-      return prevChats.map((chat) => {
-        if (chat.id === currentChatId) {
-          return {
-            ...chat,
-            ...chat,
-            messages: [...chat.messages, userMessage]
-          };
-        }
-        return chat;
-      });
-    });
-  
-    const currentChat = chats.find(chat => chat.id === currentChatId);
+    try {
+        // Add user message immediately
+        setChats((prevChats) => {
+            return prevChats.map((chat) => {
+                if (chat.id === currentChatId) {
+                    return {
+                        ...chat,
+                        messages: [...chat.messages, userMessage]
+                    };
+                }
+                return chat;
+            });
+        });
 
-    const endpoint = currentChat.messages.length > 1 ? "continue_chat" : "start_chat";
+        const currentChat = chats.find(chat => chat.id === currentChatId);
+        const endpoint = currentChat.messages.length > 1 ? "continue_chat" : "start_chat";
         const url = `http://localhost:8000/${endpoint}`;
 
         console.log("Sending request to:", url);
 
         const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-      body: JSON.stringify({ input: input })
-    });
-
-    const reader = response.body.getReader();
-    let botResponse = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      
-      const text = new TextDecoder().decode(value);
-      botResponse += text;
-
-      // Update bot message with streaming response
-      setChats((prevChats) => {
-        return prevChats.map((chat) => {
-          if (chat.id === currentChatId) {
-            return {
-              ...chat,
-              messages: [...chat.messages.filter(msg => msg.sender !== 'bot-stream'),
-                { id: chat.messages.length + 2, text: botResponse, sender: "bot" }
-              ]
-            };
-          }
-          return chat;
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({ input: input })
         });
-      });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        let botResponse = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const text = new TextDecoder().decode(value);
+            botResponse += text;
+
+            setChats((prevChats) => {
+                return prevChats.map((chat) => {
+                    if (chat.id === currentChatId) {
+                        return {
+                            ...chat,
+                            messages: [...chat.messages.filter(msg => msg.sender !== 'bot-stream'),
+                                { id: chat.messages.length + 2, text: botResponse, sender: "bot" }
+                            ]
+                        };
+                    }
+                    return chat;
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        // Add error message to chat
+        setChats((prevChats) => {
+            return prevChats.map((chat) => {
+                if (chat.id === currentChatId) {
+                    return {
+                        ...chat,
+                        messages: [...chat.messages,
+                            { 
+                                id: Date.now(),
+                                text: "Error: Could not connect to server. Please ensure the server is running.",
+                                sender: "bot"
+                            }
+                        ]
+                    };
+                }
+                return chat;
+            });
+        });
+    } finally {
+        setIsLoading(false);
+        setInput("");
     }
-  
-    setIsLoading(false);
-    setInput("");
 };
 
   const handleNewChat = () => {
