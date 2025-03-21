@@ -17,8 +17,6 @@ previous_message_id = os.getenv("PREVIOUS_MESSAGE_ID")
 # File to store values
 STATE_FILE = "chat_state.json"
 
-#get filenames from create.py
-files = create.filenames
 _files = []
 def upload_file(file_name):
     url = "https://app.alan.de/api/v1/files/"
@@ -37,19 +35,19 @@ def upload_file(file_name):
 
     return response
 
-def get_file_id():
-    url = "https://app.alan.de/api/v1/files/"
+def get_uploaded_files():
+    url = "https://app.alan.de/api/v1/files/?limit=25000"
     
     response = requests.get(url, headers=headers)
 
     return response
 
-def create_knowledge_base(connector_id, file_name, _files):
+def create_knowledge_base(connector_id, _files):
     url = f"https://app.alan.de/api/v1/connectors/{connector_id}/knowledge-bases"
 
     payload = json.dumps({
-        "title": file_name,
-        "description": file_name,
+        "title": "Pfefferminzia artikeln",
+        "description": "Pfefferminzia artikeln",
         "settings": {
           "kind": "file",
           "files": _files
@@ -154,49 +152,93 @@ def load_state():
         with open(STATE_FILE, "r") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        return {"chat_id": None, "previous_message_id": None}
+        return {"chat_id": None, "previous_message_id": None, "knowledge_base_ids": knowledge_base_ids}
 
 # Save state
 def save_state(chat_id, previous_message_id):
     with open(STATE_FILE, "w") as f:
-        json.dump({"chat_id": chat_id, "previous_message_id": previous_message_id}, f)
+        json.dump({"chat_id": chat_id, "previous_message_id": previous_message_id, "knowledge_base_ids": knowledge_base_ids}, f)
 
+def get_file_path():
+    folder="articles"
+    return [os.path.join(folder, file) for file in os.listdir(folder) if file.endswith(".jsonl")]
+
+#get filenames from articles folder
+#files = get_file_path()
+
+# Getting the file id and name
+def get_file_id_and_name():
+    response = get_uploaded_files()
+    response = response.json()
+
+    print(type(response))
+    #print(response)
+
+    if isinstance(response, dict) and "files" in response:
+        json_files = response["files"]
+        # Create list of dictionaries with file_id and file_name
+        file_info = [{"file_id": file["resource_id"], "file_name": file["title"]} for file in json_files]
+        
+        # Write to JSON file
+        with open('file_info.json', 'w') as f:
+            json.dump(file_info, f, indent=2)
+
+        return file_info
+    else:
+        print("Error: Response does not contain a 'files' list.")
 
 # Getting file ids of the articles from articles.json and create a knowledge base
-def create_knowledgebase_from_files(connector_id, knowledge_base_ids):
-    for file_name in files:
+def create_knowledgebase_from_files(connector_id):
+    """for file_name in files:
       response = upload_file(file_name)
 
       file_id = response.json().get("resource_id")
-      _files.append(file_id)
-
-# Creating a knowledge base with the first 100 articles from Pfefferminzia
+      _files.append(file_id)"""
     try:
-      response = create_knowledge_base(connector_id, file_name, _files)
-      knowledge_base_id = response.json().get("resource_id")
-      knowledge_base_ids.append(knowledge_base_id)
-      print(response.status_code, knowledge_base_id)
+        # Get all file info
+        file_info = get_file_id_and_name()
+        if not file_info:
+            raise ValueError("No files found")
+
+        # Calculate size of each part
+        total_files = len(file_info)
+        part_size = total_files // 3
+        print(f"Total files: {total_files}, Files per part: {part_size}")
+
+        # Split files into three parts
+        parts = [
+            file_info[i:i + part_size] 
+            for i in range(0, total_files, part_size)
+        ]
+
+        # Create knowledge base for each part
+        for index, part in enumerate(parts, 1):
+            _files = [file["file_id"] for file in part]
+            
+            response = create_knowledge_base(connector_id, _files)
+            
+            if response.status_code == 200:
+                knowledge_base_id = response.json().get("resource_id")
+                print(f"Created knowledge base {index} with {len(_files)} files: {response.status_code}, {knowledge_base_id}")
+            else:
+                print(f"Error creating knowledge base {index}: {response.status_code}, {response.text}")
+
+        print("Created knowledge bases with IDs:", knowledge_base_ids)
+        return knowledge_base_ids
+
     except Exception as e:
-      print("Error: ", response.status_code, response.text)  
+        print(f"Error: {str(e)}")
+        return None
 
-    print(knowledge_base_ids)
+# Create knowledge bases
+"""created_ids = create_knowledgebase_from_files(connector_id)
 
-create_knowledgebase_from_files(connector_id, knowledge_base_ids, files, _files)
-
-# Getting the file id
-"""file_ids = []
-response = get_file_id()
-response = response.json()
-
-print(type(response))
-print(response)
-
-if isinstance(response, dict) and "files" in response:
-    json_files = response["files"]
-    resource_ids = [file["resource_id"] for file in json_files]
-    print(f"Printng the size of the list here: {len(resource_ids)}. \nAnd the actual list here: {resource_ids}")
+if created_ids:
+    # Update environment variable
+    os.environ["KNOWLEDGE_BASE_IDS"] = ",".join(created_ids)
+    print(f"Successfully created {len(created_ids)} knowledge bases")
 else:
-    print("Error: Response does not contain a 'files' list.")"""
+    print("Failed to create knowledge bases")"""
 
 # Delete the uploaded files
 """for file in resource_ids:
