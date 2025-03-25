@@ -27,7 +27,7 @@
     gap: 8px;
     padding: 8px 12px;
     margin: 8px;
-    background-color: #2563eb;
+    background-color: #258D8C;
     color: white;
     border: none;
     border-radius: 6px;
@@ -61,7 +61,7 @@
       transform: translateY(0);
     }
   }
-  
+
 /* Button für neuen Chat */
 .new-chat-button {
     background-color: #258D8C;
@@ -209,7 +209,22 @@
     overflow-wrap: break-word;
     white-space: normal;
     display: inline;
-    max-width: 75%
+    max-width: 75%;
+    white-space: pre-wrap;
+    word-break: break-word;
+    display: flex;
+    align-items: flex-start;
+}
+
+.message-content {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: inherit;
+}
+
+.message-text div {
+    display: inline;
 }
 
 .bot-message .message-text {

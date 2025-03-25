@@ -3,6 +3,36 @@ import { MessageCircle, User, Bot, Send, PlusCircle, Loader2, RefreshCw } from "
 import { motion } from "framer-motion";
 import "./Chatbot.css";
 
+// DisplayString component for text formatting
+const DisplayString = ({ text }) => {
+  // First convert text to string and handle escaped characters
+  const unescapedText = String(text || '')
+    .replace(/^"/, '')  // Remove leading quote
+    .replace(/"$/, '')  // Remove trailing quote
+    .replace(/\\n/g, '\n')  // Convert escaped newlines to actual newlines
+    .replace(/\\t/g, '\t')  // Convert escaped tabs to actual tabs
+    .replace(/\\"/g, '"');  // Convert escaped quotes to regular quotes
+    
+  // Then handle HTML formatting
+  const formattedText = unescapedText
+    .split('\n')
+    .map(line => line
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/'/g, '&#39;')
+      .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
+    )
+    .join('<br />');
+
+  return (
+    <pre 
+      className="message-content"
+      dangerouslySetInnerHTML={{ __html: formattedText }} 
+    />
+  );
+};
+
 const Chatbot = () => {
   const [chats, setChats] = useState([
     { id: 1, name: "Chat 1", messages: [{ id: 1, text: "Hallo, ich bin das Wissensmanagement von Pfefferminzia.", sender: "bot" }] }
@@ -30,9 +60,8 @@ const Chatbot = () => {
 
       const result = await response.text();
       setUpdateStatus(result);
+      // Removed the setTimeout that was clearing the status
       
-      setTimeout(() => setUpdateStatus(null), 5000);
-
     } catch (error) {
       console.error('Error:', error);
       setUpdateStatus('Fehler beim Aktualisieren der Wissensdatenbank');
@@ -48,83 +77,83 @@ const Chatbot = () => {
     setIsLoading(true);
 
     try {
+      setChats((prevChats) => {
+        return prevChats.map((chat) => {
+          if (chat.id === currentChatId) {
+            return {
+              ...chat,
+              messages: [...chat.messages, userMessage]
+            };
+          }
+          return chat;
+        });
+      });
+
+      const currentChat = chats.find(chat => chat.id === currentChatId);
+      const endpoint = currentChat.messages.length > 1 ? "continue_chat" : "start_chat";
+      const url = `http://localhost:8000/${endpoint}`;
+
+      console.log("Sending request to:", url);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({ input: input })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      let botResponse = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const text = new TextDecoder().decode(value);
+        botResponse += text;
+
         setChats((prevChats) => {
-            return prevChats.map((chat) => {
-                if (chat.id === currentChatId) {
-                    return {
-                        ...chat,
-                        messages: [...chat.messages, userMessage]
-                    };
-                }
-                return chat;
-            });
+          return prevChats.map((chat) => {
+            if (chat.id === currentChatId) {
+              return {
+                ...chat,
+                messages: [...chat.messages.filter(msg => msg.sender !== 'bot-stream'),
+                  { id: chat.messages.length + 2, text: botResponse, sender: "bot" }
+                ]
+              };
+            }
+            return chat;
+          });
         });
-
-        const currentChat = chats.find(chat => chat.id === currentChatId);
-        const endpoint = currentChat.messages.length > 1 ? "continue_chat" : "start_chat";
-        const url = `http://localhost:8000/${endpoint}`;
-
-        console.log("Sending request to:", url);
-
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify({ input: input })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const reader = response.body.getReader();
-        let botResponse = '';
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            const text = new TextDecoder().decode(value);
-            botResponse += text;
-
-            setChats((prevChats) => {
-                return prevChats.map((chat) => {
-                    if (chat.id === currentChatId) {
-                        return {
-                            ...chat,
-                            messages: [...chat.messages.filter(msg => msg.sender !== 'bot-stream'),
-                                { id: chat.messages.length + 2, text: botResponse, sender: "bot" }
-                            ]
-                        };
-                    }
-                    return chat;
-                });
-            });
-        }
+      }
     } catch (error) {
-        console.error('Error:', error);
-        setChats((prevChats) => {
-            return prevChats.map((chat) => {
-                if (chat.id === currentChatId) {
-                    return {
-                        ...chat,
-                        messages: [...chat.messages,
-                            { 
-                                id: Date.now(),
-                                text: "Error: Could not connect to server. Please ensure the server is running.",
-                                sender: "bot"
-                            }
-                        ]
-                    };
+      console.error('Error:', error);
+      setChats((prevChats) => {
+        return prevChats.map((chat) => {
+          if (chat.id === currentChatId) {
+            return {
+              ...chat,
+              messages: [...chat.messages,
+                { 
+                  id: Date.now(),
+                  text: "Error: Could not connect to server. Please ensure the server is running.",
+                  sender: "bot"
                 }
-                return chat;
-            });
+              ]
+            };
+          }
+          return chat;
         });
+      });
     } finally {
-        setIsLoading(false);
-        setInput("");
+      setIsLoading(false);
+      setInput("");
     }
   };
 
@@ -154,7 +183,7 @@ const Chatbot = () => {
         </button>
         {updateStatus && (
           <div className="update-status">
-            {updateStatus}
+            <DisplayString text={updateStatus} />
           </div>
         )}
         <div className="chat-list">
@@ -183,7 +212,9 @@ const Chatbot = () => {
             {chats.find(chat => chat.id === currentChatId)?.messages.map((msg) => (
               <div key={msg.id} className={`chat-message ${msg.sender === "bot" ? "bot-message" : "user-message"}`}>
                 {msg.sender === "bot" ? <Bot size={20} className="bot-icon" /> : null}
-                <div className="message-text">{msg.text}</div>
+                <div className="message-text">
+                  <DisplayString text={msg.text} />
+                </div>
                 {msg.sender === "user" ? <User size={20} className="user-icon" /> : null}
               </div>
             ))}

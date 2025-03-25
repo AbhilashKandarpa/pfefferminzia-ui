@@ -1,7 +1,9 @@
 import json
 import os
+import time
 import create
 import requests
+import datetime
 from extract_chat_info import extract_required_info
 from get_posts import fetch_wordpress_posts
 from dotenv import load_dotenv
@@ -276,7 +278,7 @@ def update_knowledge_base(connector_id):
         
   except Exception as e:
     if "File already exists" in str(e):
-       return "Wissensdatenbank aktuell" 
+       return f"Wissensdatenbank aktuell. Zuletzt aktualisiert am:{datetime.datetime.now()}" 
     else:
       #get filenames from new_articles folder
       files = get_file_path()
@@ -321,7 +323,7 @@ def update_knowledge_base(connector_id):
           print(f"Error updating knowledge base with {file_name}: {response.status_code}, {response.text}")
           break
       print(f"Error: {str(e)}")
-      return "Wissendatenbank erfolgreich aktualisiert"
+      return f"Wissendatenbank erfolgreich aktualisiert. Zuletzt aktualisiert am:{datetime.datetime.now()}"
 
 # Delete the uploaded files
 """for file in resource_ids:
