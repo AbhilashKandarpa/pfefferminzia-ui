@@ -22,6 +22,19 @@ STATE_FILE = "chat_state.json"
 
 _files = []
 def upload_file(file_name):
+    """
+    Upload a file to the Alan AI platform.
+    
+    Args:
+        file_name (str): Path to the file to be uploaded
+        
+    Returns:
+        requests.Response: Response object containing the upload result
+        
+    Raises:
+        FileNotFoundError: If the specified file doesn't exist
+        requests.RequestException: If the upload request fails
+    """
     url = "https://app.alan.de/api/v1/files/"
 
     # Open the file and send it as a multipart form
@@ -39,6 +52,15 @@ def upload_file(file_name):
     return response
 
 def get_uploaded_files():
+    """
+    Retrieve a list of all files uploaded to the Alan AI platform.
+    
+    Returns:
+        requests.Response: Response containing list of uploaded files
+        
+    Note:
+        Limit is set to 25000 files per request
+    """
     url = "https://app.alan.de/api/v1/files/?limit=25000"
     
     response = requests.get(url, headers=headers)
@@ -46,6 +68,20 @@ def get_uploaded_files():
     return response
 
 def create_knowledge_base(connector_id, _files):
+    """
+    Create a new knowledge base with specified files.
+    
+    Args:
+        connector_id (str): ID of the connector to create knowledge base for
+        _files (list): List of file IDs to include in knowledge base
+        
+    Returns:
+        requests.Response: Response containing the created knowledge base info
+        
+    Example:
+        >>> files = ["file_id_1", "file_id_2"]
+        >>> response = create_knowledge_base("connector_123", files)
+    """
     url = f"https://app.alan.de/api/v1/connectors/{connector_id}/knowledge-bases"
 
     payload = json.dumps({
@@ -62,6 +98,15 @@ def create_knowledge_base(connector_id, _files):
     return response
 
 def delete_knowledge_base(knowledge_base_id):
+    """
+    Delete a specific knowledge base.
+    
+    Args:
+        knowledge_base_id (str): ID of the knowledge base to delete
+        
+    Returns:
+        requests.Response: Response indicating deletion status
+    """
     url = f"https://app.alan.de/api/v1/connectors/{connector_id}/knowledge-bases/{knowledge_base_id}"
 
     response = requests.delete(url, headers=headers)
@@ -69,6 +114,18 @@ def delete_knowledge_base(knowledge_base_id):
     return response
 
 def generate_response(user_input):
+    """
+    Generate an AI response using the Alan platform.
+    
+    Args:
+        user_input (str): User's question or prompt
+        
+    Returns:
+        requests.Response: Response containing generated answer
+        
+    Note:
+        Uses comma-llm-l-v3 model with temperature 0.7 and top_p 0.95
+    """
     url = "https://app.alan.de/api/v1/llm/generate_stream"
 
     payload = json.dumps({
@@ -98,6 +155,18 @@ def generate_response(user_input):
     return response
 
 def create_chat(user_input):
+    """
+    Create a new chat session with initial conversation context.
+    
+    Args:
+        user_input (str): Initial user message
+        
+    Returns:
+        requests.Response: Response containing new chat session details
+        
+    Note:
+        Includes predefined conversation context about Germany's capital
+    """
     url = "https://app.alan.de/api/v1/chats/"
 
     #Configure the chat
@@ -137,6 +206,20 @@ def create_chat(user_input):
     return response
 
 def continue_chat(user_input, chat_id, previous_message_id):
+    """
+    Continue an existing chat conversation.
+    
+    Args:
+        user_input (str): New user message
+        chat_id (str): ID of the existing chat session
+        previous_message_id (str): ID of the last message in conversation
+        
+    Returns:
+        requests.Response: Response containing the AI's reply
+        
+    Note:
+        Returns None if chat_id or previous_message_id is None
+    """
     if(chat_id is not  None and previous_message_id is not None):
         url = f"https://app.alan.de/api/v1alpha/chats/{chat_id}/generate"
 
@@ -151,6 +234,15 @@ def continue_chat(user_input, chat_id, previous_message_id):
 
 # Load previous state
 def load_state():
+    """
+    Load previous chat state from file.
+    
+    Returns:
+        dict: Contains chat_id, previous_message_id, and knowledge_base_ids
+        
+    Note:
+        Returns default state if file doesn't exist or is invalid
+    """
     try:
         with open(STATE_FILE, "r") as f:
             return json.load(f)
@@ -159,14 +251,43 @@ def load_state():
 
 # Save state
 def save_state(chat_id, previous_message_id):
+    """
+    Save current chat state to file.
+    
+    Args:
+        chat_id (str): Current chat session ID
+        previous_message_id (str): ID of last message
+        
+    Note:
+        Saves to STATE_FILE in JSON format
+    """
     with open(STATE_FILE, "w") as f:
         json.dump({"chat_id": chat_id, "previous_message_id": previous_message_id, "knowledge_base_ids": knowledge_base_ids}, f)
 
 def get_file_path():
+    """
+    Get paths of all JSONL files in new_articles folder.
+    
+    Returns:
+        list: Full paths of all .jsonl files in new_articles directory
+    """
     folder="new_articles"
     return [os.path.join(folder, file) for file in os.listdir(folder) if file.endswith(".jsonl")]
 
 def get_file_id_from_knowledgebase(connector_id, knowledge_base_id):
+    """
+    Retrieve file IDs from a specific knowledge base.
+    
+    Args:
+        connector_id (str): ID of the connector
+        knowledge_base_id (str): ID of the knowledge base
+        
+    Returns:
+        list: List of file IDs in the knowledge base
+        
+    Note:
+        Returns empty list if no files found or on error
+    """
     url = f"https://app.alan.de/api/v1alpha/connectors/{connector_id}/knowledge-bases/{knowledge_base_id}"
     response = requests.get(url, headers=headers)
     response = response.json()
@@ -186,6 +307,15 @@ def get_file_id_from_knowledgebase(connector_id, knowledge_base_id):
     
 # Getting the file id and name
 def get_file_id_and_name():
+    """
+    Get mapping of file IDs to file names for all uploaded files.
+    
+    Returns:
+        list: List of dicts containing file_id and file_name
+        
+    Note:
+        Saves results to file_info.json
+    """
     response = get_uploaded_files()
     response = response.json()
 
@@ -207,6 +337,18 @@ def get_file_id_and_name():
 
 # Getting file ids of the articles from articles.json and create a knowledge base
 def create_knowledgebase_from_files(connector_id):
+    """
+    Create multiple knowledge bases from uploaded files.
+    
+    Args:
+        connector_id (str): ID of the connector
+        
+    Returns:
+        list: IDs of created knowledge bases
+        
+    Note:
+        Splits files into three parts and creates separate knowledge base for each
+    """
     """for file_name in files:
       response = upload_file(file_name)
 
@@ -265,6 +407,19 @@ else:
 
 # Update knowledge base
 def update_knowledge_base(connector_id):
+  """
+    Update knowledge base with new articles.
+    
+    Args:
+        connector_id (str): ID of the connector
+        
+    Returns:
+        str: Status message with timestamp
+        
+    Note:
+        Fetches new WordPress posts and updates knowledge base
+        Returns different messages based on whether files existed or were updated
+    """
   knowledge_base_id="9d25af80-7f0a-4488-a439-e192a36cdcb5"
   index = 1        
   url = f"https://app.alan.de/api/v1alpha/connectors/{connector_id}/knowledge-bases/{knowledge_base_id}"
