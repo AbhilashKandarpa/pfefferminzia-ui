@@ -202,8 +202,8 @@ async def create_chat(chat_input: ChatInput):
     print("Message Content:", message_content)
 
     # Return as plain text
-    print(f"{message_content}")
-    return message_content    
+    full_response = process(message_content)
+    return full_response    
 
 
 @app.post("/continue_chat",
@@ -251,9 +251,23 @@ async def continue_chat(chat_input: ChatInput):
     print("Message Content:", message_content)
 
     # Return as plain text
-    print(f"{message_content}")
-    return message_content
+    full_response = process(message_content)
+    return full_response   
 
+
+@app.post("/update_wb",
+    summary="Update knowledge base",
+    description="Update the knowledge base with new articles"
+)
+async def update_kb():
+    """
+    Updates the knowledge base with new articles.
+
+    Returns:
+        str: Status indicating the success of the update"""
+    response = Alan.update_knowledge_base(Alan.connector_id)
+    print(response)
+    return response
 
 @app.get("/health",
     summary="Health check",

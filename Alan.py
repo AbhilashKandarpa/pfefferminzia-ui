@@ -3,6 +3,7 @@ import os
 import create
 import requests
 from extract_chat_info import extract_required_info
+from get_posts import fetch_wordpress_posts
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -160,12 +161,27 @@ def save_state(chat_id, previous_message_id):
         json.dump({"chat_id": chat_id, "previous_message_id": previous_message_id, "knowledge_base_ids": knowledge_base_ids}, f)
 
 def get_file_path():
-    folder="articles"
+    folder="new_articles"
     return [os.path.join(folder, file) for file in os.listdir(folder) if file.endswith(".jsonl")]
 
-#get filenames from articles folder
-#files = get_file_path()
-
+def get_file_id_from_knowledgebase(connector_id, knowledge_base_id):
+    url = f"https://app.alan.de/api/v1alpha/connectors/{connector_id}/knowledge-bases/{knowledge_base_id}"
+    response = requests.get(url, headers=headers)
+    response = response.json()
+    try:
+        # Check if settings and files exist in the response
+        if "settings" in response and "files" in response["settings"]:
+            files = response["settings"]["files"]
+            print(f"Found {len(files)} files in knowledge base")
+            return files
+        else:
+            print("No files found in response")
+            return []
+            
+    except Exception as e:
+        print(f"Error extracting files: {str(e)}")
+        return []
+    
 # Getting the file id and name
 def get_file_id_and_name():
     response = get_uploaded_files()
@@ -240,6 +256,73 @@ if created_ids:
 else:
     print("Failed to create knowledge bases")"""
 
+# Delete the knowledge bases
+"""for knowledge_base_id in delete_kb:
+  response = delete_knowledge_base(knowledge_base_id)
+  print(response.status_code, response.text)"""
+
+# Update knowledge base
+def update_knowledge_base(connector_id):
+  knowledge_base_id="9d25af80-7f0a-4488-a439-e192a36cdcb5"
+  index = 1        
+  url = f"https://app.alan.de/api/v1alpha/connectors/{connector_id}/knowledge-bases/{knowledge_base_id}"
+  
+  try:
+    while True:
+      files = []
+      # Fetch posts from WordPress website and save them to a JSON file
+      fetch_wordpress_posts(index)
+      index += 1
+        
+  except Exception as e:
+    if "File already exists" in str(e):
+       return "Wissensdatenbank aktuell" 
+    else:
+      #get filenames from new_articles folder
+      files = get_file_path()
+      print(f"Printing the total number of files here: {len(files)}")
+      files_in_knowledgebase = get_file_id_from_knowledgebase(connector_id, knowledge_base_id)
+      for file_name in files:
+        print(f"Uploading file: {file_name}")
+        # Upload the file to CommaSoft
+        response = upload_file(file_name)
+
+        file_id = response.json().get("resource_id")
+        files_in_knowledgebase.append(file_id)
+        print(f"Uploaded file: {file_name} with ID: {file_id}")
+        payload = json.dumps({
+            "title": "Pfefferminzia Artikeln",
+            "description": "Pfefferminzia Artikeln",
+            "settings": {
+              "kind": "file",
+              "files": files_in_knowledgebase
+            }
+        })
+        
+        response = requests.put(url, headers=headers, data=payload)
+        if response.status_code == 200:
+          print(f"Updated knowledge base with {file_name}")
+          file_info = [{"file_id": file_id, "file_name": file_name}]
+          # Read existing data
+          try:
+            with open('file_info.json', 'r') as f:
+              existing_data = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+            existing_data = []
+          
+          # Append new data
+          existing_data.extend(file_info)
+          
+          # Write back to file
+          with open('file_info.json', 'w') as f:
+            json.dump(existing_data, f, indent=2)
+      
+        else:
+          print(f"Error updating knowledge base with {file_name}: {response.status_code}, {response.text}")
+          break
+      print(f"Error: {str(e)}")
+      return "Wissendatenbank erfolgreich aktualisiert"
+
 # Delete the uploaded files
 """for file in resource_ids:
   response = requests.delete(f"https://app.alan.de/api/v1/files/{file}", headers=headers)
@@ -258,11 +341,6 @@ if isinstance(response, dict) and "knowledge_bases" in response:
     print(knowledge_base_ids)
 else:
     print("Error: Response does not contain a 'files' list.")
-
-# Delete the knowledge bases
-"""for knowledge_base_id in knowledge_base_ids:
-  response = delete_knowledge_base(knowledge_base_id)
-  print(response.status_code, response.text)"""
 
 # Querying the knowledge bases
 """flag = 0

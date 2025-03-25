@@ -18,7 +18,7 @@ def extract_json(data):
 
 def process_articles(filename):
     # Create articles directory if it doesn't exist
-    articles_dir = "articles"
+    articles_dir = "new_articles"
     if not os.path.exists(articles_dir):
         os.makedirs(articles_dir)
         

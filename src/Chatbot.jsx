@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MessageCircle, User, Bot, Send, PlusCircle, Loader2 } from "lucide-react";
+import { MessageCircle, User, Bot, Send, PlusCircle, Loader2, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import "./Chatbot.css";
 
@@ -10,6 +10,36 @@ const Chatbot = () => {
   const [currentChatId, setCurrentChatId] = useState(1);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleUpdateKnowledgeBase = async () => {
+    setIsUpdating(true);
+    try {
+      const response = await fetch('http://localhost:8000/update_wb', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.text();
+      setUpdateStatus(result);
+      
+      setTimeout(() => setUpdateStatus(null), 5000);
+
+    } catch (error) {
+      console.error('Error:', error);
+      setUpdateStatus('Fehler beim Aktualisieren der Wissensdatenbank');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -18,7 +48,6 @@ const Chatbot = () => {
     setIsLoading(true);
 
     try {
-        // Add user message immediately
         setChats((prevChats) => {
             return prevChats.map((chat) => {
                 if (chat.id === currentChatId) {
@@ -76,7 +105,6 @@ const Chatbot = () => {
         }
     } catch (error) {
         console.error('Error:', error);
-        // Add error message to chat
         setChats((prevChats) => {
             return prevChats.map((chat) => {
                 if (chat.id === currentChatId) {
@@ -98,7 +126,7 @@ const Chatbot = () => {
         setIsLoading(false);
         setInput("");
     }
-};
+  };
 
   const handleNewChat = () => {
     const newChat = {
@@ -116,6 +144,19 @@ const Chatbot = () => {
         <button className="new-chat-button" onClick={handleNewChat}>
           <PlusCircle size={20} /> Neuer Chat
         </button>
+        <button 
+          className="update-kb-button" 
+          onClick={handleUpdateKnowledgeBase}
+          disabled={isUpdating}
+        >
+          <RefreshCw size={20} className={isUpdating ? 'animate-spin' : ''} />
+          Wissensdatenbank aktualisieren
+        </button>
+        {updateStatus && (
+          <div className="update-status">
+            {updateStatus}
+          </div>
+        )}
         <div className="chat-list">
           {chats.map((chat) => (
             <div 
@@ -180,10 +221,10 @@ const Chatbot = () => {
         </motion.div>
       </div>
       <div className="footer-info">
-      <p >Tool by</p>
+        <p>Tool by</p>
         <img src="/fairdigital-logo.png" alt="fd-logo" className="footer-logo" />
       </div>
-      </div>
+    </div>
   );
 };
 
